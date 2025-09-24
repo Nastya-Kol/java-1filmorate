@@ -3,6 +3,9 @@ package ru.yandex.practicum.filmorate.model;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -12,10 +15,14 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UserTest {
     private UserController userController;
     private User validUser;
+    private UserStorage userStorage;
+    private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
+        userStorage = new InMemoryUserStorage();
+        userService = new UserService(userStorage);
+        userController = new UserController(userService);
 
         validUser = new User();
         validUser.setEmail("test@example.com");
