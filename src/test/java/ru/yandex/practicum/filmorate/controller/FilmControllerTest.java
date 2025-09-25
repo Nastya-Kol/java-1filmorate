@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -81,7 +81,7 @@ class FilmControllerTest {
         nonExistentFilm.setReleaseDate(LocalDate.of(2000, 1, 1));
         nonExistentFilm.setDuration(100);
 
-        ValidationException exception = assertThrows(ValidationException.class,
+        NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> filmController.updateFilm(nonExistentFilm));
 
         assertEquals("Фильм с id 999 не найден", exception.getMessage());

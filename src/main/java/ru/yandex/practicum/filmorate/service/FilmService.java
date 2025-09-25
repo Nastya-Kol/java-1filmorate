@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -14,7 +13,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FilmService {
@@ -27,13 +25,11 @@ public class FilmService {
     public Film create(Film film) {
         validateFilm(film);
         Film createdFilm = filmStorage.create(film);
-        log.info("Добавлен новый фильм {}", film);
         return createdFilm;
     }
 
     public List<Film> getAllFilms() {
         List<Film> films = filmStorage.getAllFilms();
-        log.info("Получен запрос на получение всех фильмов. Текущее количество: {}", filmStorage.getAllFilms());
         return films;
     }
 
@@ -44,7 +40,6 @@ public class FilmService {
     public Film update(Film film) {
         validateFilmForUpdate(film);
         Film updateFilm = filmStorage.update(film);
-        log.info("Обновлен фильм: {}", updateFilm);
         return updateFilm;
     }
 
@@ -53,13 +48,11 @@ public class FilmService {
         userStorage.getById(userId);
         Set<Long> filmLikes = likes.computeIfAbsent(filmId, k -> new HashSet<>());
         if (filmLikes.contains(userId)) {
-            log.warn("Пользователь {} уже ставил лайк фильму {}", userId, filmId);
             throw new ru.yandex.practicum.filmorate.exception.ValidationException(
                     "Пользователь уже ставил лайк этому фильму");
         }
 
         filmLikes.add(userId);
-        log.info("Пользователь {} поставил лайк фильму {}. Всего лайков: {}", userId, filmId, filmLikes.size());
     }
 
     public void removeLike(long filmId, long userId) {
@@ -70,7 +63,6 @@ public class FilmService {
         if (filmLikes != null) {
             filmLikes.remove(userId);
         }
-        log.info("Пользователь {} удалил лайк фильму {}", userId, filmId);
     }
 
     public List<Film> getPopularFilms(int count) {
@@ -85,7 +77,6 @@ public class FilmService {
 
     private void validateFilm(Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
-            log.warn("Попытка добавления фильма с недопустимой датой релиза: {}", film.getReleaseDate());
             throw new ValidationException("Дата релиза не может быть раньше " + MIN_RELEASE_DATE);
         }
     }
