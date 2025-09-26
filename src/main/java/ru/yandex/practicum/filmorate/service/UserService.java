@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -17,7 +16,6 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserStorage userStorage;
-    private final Map<Long, Set<Long>> friends = new HashMap<>();
 
     public User createUsers(User user) {
         validateUser(user);
@@ -39,7 +37,7 @@ public class UserService {
     }
 
     public User updateUsers(User user) {
-        validateUserForUpdate(user);
+        validateUser(user);
         User updateUsers = userStorage.updateUser(user);
         log.info("Обновлен пользователь: {}", user);
         return updateUsers;
@@ -49,39 +47,41 @@ public class UserService {
         User user = userStorage.getById(userId);
         User friend = userStorage.getById(friendId);
 
-        friends.computeIfAbsent(userId, k -> new HashSet<>()).add(friendId);
-        friends.computeIfAbsent(friendId, k -> new HashSet<>()).add(userId);
+        if (user.getFriends().contains(friendId)) {
+            throw new ValidationException("Пользователь уже добавлен в друзья");
+        }
+
+        user.getFriends().add(friendId);
+        friend.getFriends().add(userId);
+
+        userStorage.updateUser(user);
+        userStorage.updateUser(friend);
     }
 
     public void removeFriend(long userId, long friendId) {
         User user = userStorage.getById(userId);
         User friend = userStorage.getById(friendId);
 
-        Set<Long> userFriends = friends.get(userId);
-        if (userFriends != null) {
-            userFriends.remove(friendId);
-        }
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(userId);
 
-        Set<Long> friendFriends = friends.get(friendId);
-        if (friendFriends != null) {
-            friendFriends.remove(userId);
-        }
+        userStorage.updateUser(user);
+        userStorage.updateUser(friend);
     }
 
     public List<User> getFriends(long userId) {
-        userStorage.getById(userId); // Проверяем существование пользователя
-        Set<Long> friendIds = friends.getOrDefault(userId, Collections.emptySet());
-        return friendIds.stream()
+        User user = userStorage.getById(userId);
+        return user.getFriends().stream()
                 .map(userStorage::getById)
                 .collect(Collectors.toList());
     }
 
     public List<User> getCommonFriends(long userId, long otherId) {
-        userStorage.getById(userId);
-        userStorage.getById(otherId);
+        User user = userStorage.getById(userId);
+        User otherUser = userStorage.getById(otherId);
 
-        Set<Long> userFriends = friends.getOrDefault(userId, Collections.emptySet());
-        Set<Long> otherFriends = friends.getOrDefault(otherId, Collections.emptySet());
+        Set<Long> userFriends = user.getFriends();
+        Set<Long> otherFriends = otherUser.getFriends();
 
         return userFriends.stream()
                 .filter(otherFriends::contains)
@@ -89,18 +89,9 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-
     private void validateUser(User user) {
         if (user.getLogin().contains(" ")) {
             throw new ValidationException("Логин не может содержать пробелы");
         }
-    }
-
-    private void validateUserForUpdate(User user) {
-        if (!userStorage.exists(user.getId())) {
-            throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
-        }
-
-        validateUser(user);
     }
 }

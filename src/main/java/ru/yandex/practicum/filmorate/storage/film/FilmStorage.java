@@ -13,8 +13,4 @@ public interface FilmStorage {
     List<Film> getAllFilms();
 
     Film getById(long id);
-
-    void delete(long id);
-
-    boolean exists(long id);
 }
